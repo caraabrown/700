@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,10 +27,7 @@
 
 <!-- Video Background -->
 <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden;">
-  <video id="bgVideo" muted playsinline autoplay
-    style="position: absolute; top: 50%; left: 50%; min-width: 100%; min-height: 100%; width: auto; height: auto; transform: translate(-50%, -50%); object-fit: cover;">
-    <source src="assets/throwaway_1080p.mp4" type="video/mp4">
-  </video>
+  <div id="yt-bg" style="position: absolute; top: 50%; left: 50%; width: 177.78vh; height: 100vh; min-width: 100vw; min-height: 56.25vw; transform: translate(-50%, -50%); pointer-events: none;"></div>
   <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.5) 80%, rgba(0,0,0,0.85) 100%); pointer-events: none;"></div>
 </div>
 
@@ -88,24 +86,53 @@
 
 <script>
 (function() {
-  var video = document.getElementById('bgVideo');
-  if (!video) return;
+  var tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
   var clips = [[4,36],[40,72],[76,108],[112,132]];
   var currentClip = 0;
-  video.currentTime = clips[0][0];
-  function playNext() {
-    currentClip = (currentClip + 1) % clips.length;
-    video.currentTime = clips[currentClip][0];
-    video.play();
-  }
-  video.addEventListener('timeupdate', function() {
-    if (video.currentTime >= clips[currentClip][1]) playNext();
-  });
-  video.addEventListener('loadedmetadata', function() {
-    video.currentTime = clips[0][0];
-    video.play();
-  });
-  video.play();
+  var player;
+  var checkInterval;
+  window.onYouTubeIframeAPIReady = function() {
+    player = new YT.Player('yt-bg', {
+      videoId: 'Sws0OYU_Czw',
+      playerVars: {
+        autoplay: 1,
+        mute: 1,
+        controls: 0,
+        showinfo: 0,
+        rel: 0,
+        modestbranding: 1,
+        iv_load_policy: 3,
+        cc_load_policy: 0,
+        disablekb: 1,
+        fs: 0,
+        start: clips[0][0],
+        playsinline: 1
+      },
+      events: {
+        onReady: function(e) {
+          e.target.seekTo(clips[0][0]);
+          e.target.playVideo();
+          checkInterval = setInterval(function() {
+            if (!player) return;
+            var t = player.getCurrentTime();
+            if (t >= clips[currentClip][1]) {
+              currentClip = (currentClip + 1) % clips.length;
+              player.seekTo(clips[currentClip][0], true);
+            }
+          }, 500);
+        },
+        onStateChange: function(e) {
+          if (e.data === YT.PlayerState.ENDED) {
+            currentClip = 0;
+            player.seekTo(clips[0][0], true);
+            player.playVideo();
+          }
+        }
+      }
+    });
+  };
 })();
 </script>
 </body>
